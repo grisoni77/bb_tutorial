@@ -10,6 +10,21 @@ $(function(){
             price: 100,
             checked: false
         },
+        
+        validate: function(data) {
+            if ('' == data.title) {
+                return 'No empty title allowed';
+            }
+        },
+        
+        initialize: function() {
+            this.on('change:checked', function() { 
+                console.log(this.get('title'), 'selected');
+            });
+            this.on("invalid", function(model, error){
+                console.log(error);
+            });
+        },
 
         // Helper function for checking/unchecking a service
         toggle: function(){
@@ -41,9 +56,13 @@ $(function(){
     // This view turns a Service model into HTML. Will create LI elements.
     var ServiceView = Backbone.View.extend({
         tagName: 'li',
+        
+        // Cache the template function for a single item.
+        svcTpl: _.template( $('#service-template').html() ),
 
         events:{
             'click': 'toggleService'
+            
         },
 
         initialize: function(){
@@ -58,9 +77,10 @@ $(function(){
 
             // Create the HTML
 
-            this.$el.html('<input type="checkbox" value="1" name="' + this.model.get('title') + '" /> ' + this.model.get('title') + '<span>$' + this.model.get('price') + '</span>');
-            this.$('input').prop('checked', this.model.get('checked'));
-
+            //this.$el.html('<input type="checkbox" value="1" name="' + this.model.get('title') + '" /> ' + this.model.get('title') + '<span>$' + this.model.get('price') + '</span>');
+            //this.$('input').prop('checked', this.model.get('checked'));
+            this.$el.html( this.svcTpl( this.model.toJSON() ) );
+            
             // Returning the object is a good practice
             // that makes chaining possible
             return this;
@@ -83,16 +103,26 @@ $(function(){
             // Cache these selectors
             this.total = $('#total span');
             this.list = $('#services');
+            this.add = $('#add-service');
 
+            // Add new services when submit
+            var that = this;
+            $('input[type=submit]', this.add).on('click', function(){
+                console.log(that);
+                var title = $('input[name=title]', that.add);
+                console.log(title);
+                var price = $('input[name=price]', that.add).value;
+                that.addService(title, price);
+            });
+             
             // Listen for the change event on the collection.
             // This is equivalent to listening on every one of the 
             // service objects in the collection.
-            this.listenTo(services, 'change', this.render);
+            this.listenTo(this.model, 'change', this.render);
 
             // Create views for every one of the services in the
             // collection and add them to the page
-
-            services.each(function(service){
+            this.model.each(function(service){
 
                 var view = new ServiceView({ model: service });
                 this.list.append(view.render().el);
@@ -101,15 +131,14 @@ $(function(){
         },
 
         render: function(){
-
             console.log('render App');
-            
+
             // Calculate the total order amount by agregating
             // the prices of only the checked elements
 
             var total = 0;
 
-            _.each(services.getChecked(), function(elem){
+            _.each(this.model.getChecked(), function(elem){
                 total += elem.get('price');
             });
 
@@ -117,10 +146,18 @@ $(function(){
             this.total.text('$'+total);
 
             return this;
+        },
+        
+        addService: function(title, price) {
+            var service = new Service({title: title, price: price});
+            this.model.add(service);
+            console.log('added Service');
+            var view = new ServiceView({model: service});
+            this.list.append(view.render().el);
         }
     });
 
-    new App();
+    new App({model: services});
     
 });
 

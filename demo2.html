@@ -27,12 +27,29 @@
             <input type="submit" id="order" value="Order" />
 
         </form>
+        
+        <form id="add-service" action="#">
+            <h1>Add new service</h1>
+            <label for="title">Title</label>
+            <input type="text" id="title" name="title" value="" />
+            <br/>
+            <label for="price">Price</label>
+            <input type="text" id="price" name="price" value="" />
+            <br/>
+            
+            <input type="submit" id="submit-add" value="Add service" onclick="return false;" />
+        </form>
 
         <!-- JavaScript Includes -->
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
         <script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min.js"></script>
 
+        <script type="text/template" id="service-template">
+            <input type="checkbox" value="1" name="<%= title %>" <%= checked ? 'checked="checked"' : '' %>" />
+            <%= title %> $<span><%=price%></span>       
+        </script>
+        
         <script src="assets/js/script2.js"></script>
 
     </body>
