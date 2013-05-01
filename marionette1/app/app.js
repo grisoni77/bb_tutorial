@@ -5,6 +5,12 @@ MyApp.addRegions({
 });
 
 AngryCat = Backbone.Model.extend({
+    defaults: {
+        votes: 0
+    },
+    addVote: function() {
+        this.set({votes: this.get('votes') + 1});
+    },
     rankUp: function() {
         this.set({rank: this.get('rank') - 1});
     },
@@ -31,7 +37,7 @@ AngryCats = Backbone.Collection.extend({
                 error.name = "NoRankError";
                 throw error;
             }
-        });        
+        });
         
         var self = this;
         
@@ -53,6 +59,25 @@ AngryCats = Backbone.Collection.extend({
             }
             self.rankDown(cat);
             self.sort();
+        });
+        
+        MyApp.vent.on("disqualify", function(cat){
+            console.log("disqualifying cat "+cat.get("name"));
+            var disqualifiedRank = cat.get('rank');
+            var catsToUprank = self.filter(
+                function(cat){ return cat.get('rank') > disqualifiedRank; }
+            );
+            catsToUprank.forEach(function(cat){
+                cat.rankUp();
+            });
+            /*
+           var rank = 1;
+            _.each(this.model, function(acat){
+                acat.set('rank', rank);
+                ++rank;
+            });
+            */
+            self.trigger('reset');
         });
 
     },
@@ -89,21 +114,23 @@ AngryCatView = Backbone.Marionette.ItemView.extend({
     className: 'angry_cat',
     events: {
         'click .rank_up img': 'rankUp',
-        'click .rank_down img': 'rankDown'
+        'click .rank_down img': 'rankDown',
+        'click .disqualify': 'disqualify'
+    },
+    initialize: function() {
+        this.bindTo(this.model, 'change:votes', this.render);
     },
     rankUp: function() {
+        this.model.addVote();
         MyApp.vent.trigger("rank:up", this.model);
-        /*
-        var rank = this.model.get('rank');
-        this.model.set('rank', rank==5 ? 5 : rank+1);
-        */
     },
     rankDown: function() {
+        this.model.addVote();
         MyApp.vent.trigger("rank:down", this.model);
-        /*
-        var rank = this.model.get('rank');
-        this.model.set('rank', rank==1 ? 1 : rank-1);
-        */
+    },
+    disqualify: function() {
+        MyApp.vent.trigger("disqualify", this.model);
+        this.model.destroy();
     }
 });
 
